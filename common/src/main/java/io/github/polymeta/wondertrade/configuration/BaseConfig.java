@@ -63,8 +63,8 @@ public class BaseConfig {
         public String item;
         public String customName;
         public int position;
-        public ButtonConfig(int position, String item, String customName)
-        {
+
+        public ButtonConfig(int position, String item, String customName) {
             this.position = position;
             this.customName = customName;
             this.item = item;
@@ -105,7 +105,7 @@ public class BaseConfig {
 
         public Component broadcastPokemon(Pokemon pokemon, RegistryAccess registryAccess) {
             var stringMessage = pokemon.getShiny() ? this.broadcastShinyPokemonAdded : broadcastPokemonAdded;
-            if(stringMessage.isBlank() || stringMessage.isEmpty()) {
+            if (stringMessage.isBlank() || stringMessage.isEmpty()) {
                 return Component.empty();
             }
             return TextUtil.styledText(stringMessage, registryAccess,

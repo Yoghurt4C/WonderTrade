@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "io.github.polymeta.wondertrade.fabric.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "StrongBattleAIMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

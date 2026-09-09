@@ -20,21 +20,18 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class ConfirmationGui implements MenuProvider
-{
+public class ConfirmationGui implements MenuProvider {
     private final Container container = new SimpleContainer(9 * 3);
     private final ServerPlayer serverPlayer;
     private final Pokemon pokemon;
 
-    public ConfirmationGui(ServerPlayer serverPlayer, Pokemon pokemon)
-    {
+    public ConfirmationGui(ServerPlayer serverPlayer, Pokemon pokemon) {
         this.serverPlayer = serverPlayer;
         this.pokemon = pokemon;
         setupContainer();
     }
 
-    private void setupContainer()
-    {
+    private void setupContainer() {
         GuiUtil.checkAndPlaceBorders(this.container);
         GuiUtil.placeButton(WonderTrade.config.gui.denyButton, this.container, this.serverPlayer.registryAccess());
         GuiUtil.placeButton(WonderTrade.config.gui.confirmationButton, this.container, this.serverPlayer.registryAccess());
@@ -43,41 +40,32 @@ public class ConfirmationGui implements MenuProvider
 
     @Nullable
     @Override
-    public AbstractContainerMenu createMenu(int i, Inventory inventory, Player player)
-    {
-        return new ChestMenu(MenuType.GENERIC_9x3, i, inventory, container, 3)
-        {
+    public AbstractContainerMenu createMenu(int i, Inventory inventory, Player player) {
+        return new ChestMenu(MenuType.GENERIC_9x3, i, inventory, container, 3) {
             @Override
-            public void clicked(int slot, int buttonNo, ClickType clickType, Player player)
-            {
-                if(WonderTrade.config.gui.denyButton != null && slot == WonderTrade.config.gui.denyButton.position)
-                {
+            public void clicked(int slot, int buttonNo, ClickType clickType, Player player) {
+                if (WonderTrade.config.gui.denyButton != null && slot == WonderTrade.config.gui.denyButton.position) {
                     player.openMenu(new TradePartyGui((ServerPlayer) player));
-                }
-                else if(WonderTrade.config.gui.confirmationButton != null && slot == WonderTrade.config.gui.confirmationButton.position)
-                {
+                } else if (WonderTrade.config.gui.confirmationButton != null && slot == WonderTrade.config.gui.confirmationButton.position) {
                     TradeUtil.doWonderTrade((ServerPlayer) player, pokemon);
                     player.closeContainer();
                 }
             }
 
             @Override
-            public @NotNull ItemStack quickMoveStack(Player player, int i)
-            {
+            public @NotNull ItemStack quickMoveStack(Player player, int i) {
                 return ItemStack.EMPTY;
             }
 
             @Override
-            public boolean stillValid(Player player)
-            {
+            public boolean stillValid(Player player) {
                 return true;
             }
         };
     }
 
     @Override
-    public @NotNull Component getDisplayName()
-    {
+    public @NotNull Component getDisplayName() {
         return WonderTrade.config.gui.confirmationWindowTitle(this.serverPlayer.registryAccess());
     }
 }

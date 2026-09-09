@@ -20,25 +20,21 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.ClickType;
-
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class TradePartyGui implements MenuProvider
-{
+public class TradePartyGui implements MenuProvider {
     private final Container container = new SimpleContainer(9 * 3);
     private final ServerPlayer serverPlayer;
 
-    public TradePartyGui(ServerPlayer serverPlayer)
-    {
+    public TradePartyGui(ServerPlayer serverPlayer) {
         this.serverPlayer = serverPlayer;
         setupContainer();
     }
 
-    private void setupContainer()
-    {
+    private void setupContainer() {
         GuiUtil.checkAndPlaceBorders(this.container);
         GuiUtil.placeButton(WonderTrade.config.gui.cancelButton, this.container, this.serverPlayer.registryAccess());
 
@@ -48,27 +44,19 @@ public class TradePartyGui implements MenuProvider
         emptyBlock.set(DataComponents.HIDE_ADDITIONAL_TOOLTIP, Unit.INSTANCE);
 
         var pokemonStorage = Cobblemon.INSTANCE.getStorage().getParty(this.serverPlayer).toGappyList();
-        for(int i = 0; i < 3; i++)
-        {
+        for (int i = 0; i < 3; i++) {
             var poke = pokemonStorage.get(i);
-            if(poke != null)
-            {
+            if (poke != null) {
                 container.setItem(i + 10, PokemonItem.from(pokemonStorage.get(i)));
-            }
-            else
-            {
+            } else {
                 container.setItem(i + 10, emptyBlock);
             }
         }
-        for(int i = 3; i < 6; i++)
-        {
+        for (int i = 3; i < 6; i++) {
             var poke = pokemonStorage.get(i);
-            if(poke != null)
-            {
+            if (poke != null) {
                 container.setItem(i + 11, PokemonItem.from(pokemonStorage.get(i)));
-            }
-            else
-            {
+            } else {
                 container.setItem(i + 11, emptyBlock);
             }
         }
@@ -76,16 +64,12 @@ public class TradePartyGui implements MenuProvider
 
     @Nullable
     @Override
-    public AbstractContainerMenu createMenu(int i, Inventory inventory, Player player)
-    {
-        return new ChestMenu(MenuType.GENERIC_9x3, i, inventory, container, 3)
-        {
+    public AbstractContainerMenu createMenu(int i, Inventory inventory, Player player) {
+        return new ChestMenu(MenuType.GENERIC_9x3, i, inventory, container, 3) {
             @Override
-            public void clicked(int slot, int buttonNo, ClickType clickType, Player player)
-            {
+            public void clicked(int slot, int buttonNo, ClickType clickType, Player player) {
                 PlayerPartyStore storage = Cobblemon.INSTANCE.getStorage().getParty((ServerPlayer) player);
-                var pokemon = switch(slot)
-                {
+                var pokemon = switch (slot) {
                     case 10 -> storage.get(0);
                     case 11 -> storage.get(1);
                     case 12 -> storage.get(2);
@@ -94,38 +78,32 @@ public class TradePartyGui implements MenuProvider
                     case 16 -> storage.get(5);
                     default -> null;
                 };
-                if(pokemon != null)
-                {
+                if (pokemon != null) {
                     openConfirmationGui(pokemon);
                 }
-                if(WonderTrade.config.gui.cancelButton != null && slot == WonderTrade.config.gui.cancelButton.position)
-                {
+                if (WonderTrade.config.gui.cancelButton != null && slot == WonderTrade.config.gui.cancelButton.position) {
                     player.closeContainer();
                 }
             }
 
             @Override
-            public boolean stillValid(Player player)
-            {
+            public boolean stillValid(Player player) {
                 return true;
             }
 
             @Override
-            public @NotNull ItemStack quickMoveStack(Player player, int i)
-            {
+            public @NotNull ItemStack quickMoveStack(Player player, int i) {
                 return ItemStack.EMPTY;
             }
         };
     }
 
-    public void openConfirmationGui(Pokemon pokemon)
-    {
+    public void openConfirmationGui(Pokemon pokemon) {
         this.serverPlayer.openMenu(new ConfirmationGui(this.serverPlayer, pokemon));
     }
 
     @Override
-    public @NotNull Component getDisplayName()
-    {
+    public @NotNull Component getDisplayName() {
         return WonderTrade.config.gui.mainWindowTitle(this.serverPlayer.registryAccess());
     }
 }

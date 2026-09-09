@@ -19,6 +19,9 @@
       "io.github.polymeta.wondertrade.fabric.WonderTradeFabric"
     ]
   },
+  "mixins": [
+    "wondertrade.mixins.json"
+  ],
   "depends": {
     "fabric": "*",
     "minecraft": "1.21.1",

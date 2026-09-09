@@ -11,26 +11,20 @@ import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-public class GuiUtil
-{
-    public static void placeButton(BaseConfig.ButtonConfig input, Container container, RegistryAccess access)
-    {
-        if(input == null)
-        {
+public class GuiUtil {
+    public static void placeButton(BaseConfig.ButtonConfig input, Container container, RegistryAccess access) {
+        if (input == null) {
             return;
         }
         var stack = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse(input.item)));
-        if(input.customName != null && !input.customName.isBlank())
-        {
+        if (input.customName != null && !input.customName.isBlank()) {
             stack.set(DataComponents.CUSTOM_NAME, TextUtil.styledText(input.customName, access));
         }
         container.setItem(input.position, stack);
     }
 
-    public static void checkAndPlaceBorders(Container container)
-    {
-        if(!WonderTrade.config.gui.generateBorders)
-        {
+    public static void checkAndPlaceBorders(Container container) {
+        if (!WonderTrade.config.gui.generateBorders) {
             return;
         }
         var redBorder = new ItemStack(Items.RED_STAINED_GLASS_PANE);
@@ -40,17 +34,14 @@ public class GuiUtil
         blackBorder.set(DataComponents.CUSTOM_NAME, Component.empty());
         whiteBorder.set(DataComponents.CUSTOM_NAME, Component.empty());
 
-        for(int i = 0; i < 9; i++)
-        {
+        for (int i = 0; i < 9; i++) {
             container.setItem(i, redBorder);
         }
-        for(int i = 9; i < 18; i++)
-        {
+        for (int i = 9; i < 18; i++) {
             container.setItem(i, blackBorder);
 
         }
-        for(int i = 18; i < 27; i++)
-        {
+        for (int i = 18; i < 27; i++) {
             container.setItem(i, whiteBorder);
         }
     }

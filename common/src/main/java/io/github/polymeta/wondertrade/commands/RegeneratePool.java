@@ -19,7 +19,7 @@ public class RegeneratePool {
     private static final Command<CommandSourceStack> ExecuteDefault = (context) -> Regenerate(context, WonderTrade.config.poolSize);
 
     private static int Regenerate(CommandContext<CommandSourceStack> context, int size) {
-        if(WonderTrade.regenerating.get()) {
+        if (WonderTrade.regenerating.get()) {
             context.getSource().sendSystemMessage(Component.literal("The WonderTrade pool is being regenerated!"));
             return Command.SINGLE_SUCCESS;
         }

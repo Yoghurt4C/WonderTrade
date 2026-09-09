@@ -24,31 +24,31 @@ public class Trade {
                 LiteralArgumentBuilder.<CommandSourceStack>literal("wondertrade")
                         .requires(req -> Cobblemon.INSTANCE.getPermissionValidator().hasPermission(req, new CobblemonPermission("wondertrade.command.trade.base", PermissionLevel.NONE)))
                         .then(Commands.argument("slot", PartySlotArgumentType.Companion.partySlot())
-                                .then(Commands.argument("confirmation", StringArgumentType.greedyString()).executes(ExecuteWithConfirm))
+                                .then(Commands.argument("confirmation", StringArgumentType.greedyString()).suggests((commandContext, suggestionsBuilder) -> suggestionsBuilder.suggest("y").buildFuture()).executes(ExecuteWithConfirm))
                                 .executes(Execute))
                         .requires(req -> Cobblemon.INSTANCE.getPermissionValidator().hasPermission(req, new CobblemonPermission("wondertrade.command.trade.base", PermissionLevel.NONE)))
                         .then(Commands.literal("pool")
-                                      .executes(ctx -> {
-                                          if(WonderTrade.regenerating.get()) {
-                                              ctx.getSource().sendSystemMessage(Component.literal("The WonderTrade pool is being regenerated!"));
-                                              return Command.SINGLE_SUCCESS;
-                                          }
-                                          var player = ctx.getSource().getPlayerOrException();
-                                          player.openMenu(new PoolGui(player, 0));
-                                          return Command.SINGLE_SUCCESS;
-                                      })
+                                .executes(ctx -> {
+                                    if (WonderTrade.regenerating.get()) {
+                                        ctx.getSource().sendSystemMessage(Component.literal("The WonderTrade pool is being regenerated!"));
+                                        return Command.SINGLE_SUCCESS;
+                                    }
+                                    var player = ctx.getSource().getPlayerOrException();
+                                    player.openMenu(new PoolGui(player, 0));
+                                    return Command.SINGLE_SUCCESS;
+                                })
                         )
                         .requires(req -> Cobblemon.INSTANCE.getPermissionValidator().hasPermission(req, new CobblemonPermission("wondertrade.command.trade.base", PermissionLevel.NONE)))
-                        .executes(ctx ->  {
-                            if(WonderTrade.regenerating.get()) {
+                        .executes(ctx -> {
+                            if (WonderTrade.regenerating.get()) {
                                 ctx.getSource().sendSystemMessage(Component.literal("The WonderTrade pool is being regenerated!"));
                                 return Command.SINGLE_SUCCESS;
                             }
                             var player = ctx.getSource().getPlayerOrException();
                             var canBypass = Cobblemon.INSTANCE.getPermissionValidator().hasPermission(player,
-                                                                                                      new CobblemonPermission("wondertrade.command.trade.bypass",
-                                                                                                                              PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS));
-                            if(TradeUtil.isPlayerOnCooldown(player.getUUID(), canBypass)) {
+                                    new CobblemonPermission("wondertrade.command.trade.bypass",
+                                            PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS));
+                            if (TradeUtil.isPlayerOnCooldown(player.getUUID(), canBypass)) {
                                 player.sendSystemMessage(WonderTrade.config.messages.cooldownFeedback(player.registryAccess()));
                                 return Command.SINGLE_SUCCESS;
                             }
@@ -60,21 +60,21 @@ public class Trade {
     }
 
     private static final Command<CommandSourceStack> Execute = context -> {
-        if(WonderTrade.regenerating.get()) {
+        if (WonderTrade.regenerating.get()) {
             context.getSource().sendSystemMessage(Component.literal("The WonderTrade pool is being regenerated!"));
             return Command.SINGLE_SUCCESS;
         }
         var slot = PartySlotArgumentType.Companion.getPokemon(context, "slot");
         var player = context.getSource().getPlayerOrException();
-        var slotNo = ((PartyPosition)slot.getStoreCoordinates().get().getPosition()).getSlot();
+        var slotNo = ((PartyPosition) slot.getStoreCoordinates().get().getPosition()).getSlot();
         var canBypass = Cobblemon.INSTANCE.getPermissionValidator().hasPermission(player,
                 new CobblemonPermission("wondertrade.command.trade.bypass",
                         PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS));
-        if(TradeUtil.isPlayerOnCooldown(player.getUUID(), canBypass)) {
+        if (TradeUtil.isPlayerOnCooldown(player.getUUID(), canBypass)) {
             player.sendSystemMessage(WonderTrade.config.messages.cooldownFeedback(player.registryAccess()));
             return Command.SINGLE_SUCCESS;
         }
-        if(TradeUtil.isPokemonForbidden(slot) && !canBypass) {
+        if (TradeUtil.isPokemonForbidden(slot) && !canBypass) {
             player.sendSystemMessage(WonderTrade.config.messages.pokemonNotAllowed(player.registryAccess()));
             return Command.SINGLE_SUCCESS;
         }
@@ -84,13 +84,13 @@ public class Trade {
     };
 
     private static final Command<CommandSourceStack> ExecuteWithConfirm = context -> {
-        if(WonderTrade.regenerating.get()) {
+        if (WonderTrade.regenerating.get()) {
             context.getSource().sendSystemMessage(Component.literal("The WonderTrade pool is being regenerated!"));
             return Command.SINGLE_SUCCESS;
         }
         var slot = PartySlotArgumentType.Companion.getPokemon(context, "slot");
-        var confirmation = StringArgumentType.getString(context, "confirmation");
-        if(!confirmation.trim().equals("--confirm")){
+        var confirmation = StringArgumentType.getString(context, "confirmation").trim();
+        if (!confirmation.startsWith("y")) {
             return Execute.run(context);
         }
         var player = context.getSource().getPlayerOrException();

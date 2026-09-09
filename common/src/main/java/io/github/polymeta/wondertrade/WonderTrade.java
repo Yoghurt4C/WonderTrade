@@ -2,23 +2,26 @@ package io.github.polymeta.wondertrade;
 
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
-import com.cobblemon.mod.common.api.pokemon.PokemonPropertyExtractor;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
+import dev.architectury.event.events.common.TickEvent;
 import io.github.polymeta.wondertrade.commands.RegeneratePool;
 import io.github.polymeta.wondertrade.commands.Reload;
 import io.github.polymeta.wondertrade.commands.Trade;
 import io.github.polymeta.wondertrade.configuration.BaseConfig;
 import io.github.polymeta.wondertrade.configuration.Pool;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.Locale;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
@@ -37,8 +40,8 @@ public class WonderTrade {
     public static ScheduledThreadPoolExecutor scheduler;
     public static ForkJoinPool worker;
 
-    private static final Random rng = new Random();
-    private static final Logger logger = LogManager.getLogger();
+    public static final Random rng = new Random();
+    public static final Logger logger = LogManager.getLogger();
 
     public static void init() {
         logger.info("WonderTrade by Polymeta starting up!");
@@ -52,7 +55,8 @@ public class WonderTrade {
         worker = new ForkJoinPool(16, new WorkerThreadFactory(), new ExceptionHandler(), false);
         //load config and pool and message configuration
         loadConfig();
-        loadPool();
+        pool = new Pool();
+        //loadPool();
 
         CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> {
             RegeneratePool.register(dispatcher);
@@ -60,10 +64,13 @@ public class WonderTrade {
             Reload.register(dispatcher);
         });
         LifecycleEvent.SERVER_STARTED.register((instance) -> {
-            if(WonderTrade.pool.pokemon.isEmpty()) {
+            if (WonderTrade.pool.pokemon.isEmpty()) {
                 logger.info("Regenerating pool as it is empty");
                 WonderTrade.regeneratePool(WonderTrade.config.poolSize);
             }
+        });
+        TickEvent.SERVER_LEVEL_POST.register((world) -> {
+            if (world.getGameTime() % 12000 == 0) regeneratePool(WonderTrade.config.poolSize);
         });
         LifecycleEvent.SERVER_STOPPING.register(instance -> {
             scheduler.shutdownNow();
@@ -71,41 +78,60 @@ public class WonderTrade {
         });
     }
 
-    public static void regeneratePool(int size)
-    {
-        if(regenerating.get())
-        {
+    public static String[] shitlist = {"shadow", "growlithe_hisuian", "arcanine_hisuian"};
+
+    public static void regeneratePool(int size) {
+        if (regenerating.get()) {
             return;
         }
-        worker.execute(() -> {
+        //worker.execute(() -> {
             regenerating.set(true);
             var randomProp = PokemonProperties.Companion.parse("species=random");
             var blacklist = config.blacklist.stream().map(PokemonProperties.Companion::parse).toList();
             pool.pokemon.clear();
             for (int i = 0; i < size; i++) {
-                randomProp.setLevel(rng.nextInt(Math.max(1, config.poolMinLevel), Math.min(Cobblemon.config.getMaxPokemonLevel(), config.poolMaxLevel)));
+                randomProp.setLevel(1);
+                //randomProp.setLevel(rng.nextInt(Math.max(1, config.poolMinLevel), Math.min(Cobblemon.config.getMaxPokemonLevel(), config.poolMaxLevel)));
                 Pokemon pokemon;
                 var retryCount = 0;
-                do
-                {
+                do {
                     pokemon = randomProp.create();
+                    if (ArrayUtils.contains(shitlist, pokemon.getSpecies().resourceIdentifier.getPath())) continue;
                     final Pokemon finalPokemon = pokemon;
-                    if(blacklist.stream().noneMatch(prop -> prop.matches(finalPokemon)))
-                    {
+
+                    int n = rng.nextInt(100);
+                    int chance = 100;
+                    if (pokemon.isLegendary()) chance = 2;
+                    else if (pokemon.isMythical()) chance = 4;
+                    else {
+                        int bst = pokemon.getSpecies().getBaseStats().values().stream().reduce(0, Integer::sum);
+                        if (bst > 540) chance = 12;
+                        else if (bst > 450) chance = 28;
+                        else if (bst > 300) chance = 65;
+                    }
+                    if (pokemon.getSpecies().getPreEvolution() != null) chance /= 2;
+                    if (n > chance) continue;
+                    else if (blacklist.stream().noneMatch(prop -> prop.matches(finalPokemon))) {
                         break;
                     }
                     retryCount++;
-                } while(retryCount <= 50);
-                if(retryCount >= 50)
-                {
+                } while (retryCount <= 50);
+                if (retryCount >= 50) {
                     logger.error("Failed to regenerate pool! WonderTrade is now in a potentially broken state. Please review the config and try again.");
                     return;
                 }
-                pool.pokemon.add(pokemon.createPokemonProperties(PokemonPropertyExtractor.ALL).asString(" "));
+                var forms = pokemon.getSpecies().getForms().stream().filter(formData -> !formData.getDynamaxBlocked()).toList();
+                if (forms.size() > 1) {
+                    var blep = forms.get(rng.nextInt(forms.size()));
+                    if (!blep.getAspects().isEmpty()) {
+                        pokemon.setForcedAspects(Set.copyOf(blep.getAspects()));
+                    }
+                }
+                pool.pokemon.add(pokemon);
             }
-            savePool();
+            //savePool();
             regenerating.set(false);
-        });
+        //});
     }
 
     public static void loadConfig() {
@@ -127,7 +153,7 @@ public class WonderTrade {
         } else {
             config = new BaseConfig();
         }
-        if(config.poolMinLevel > config.poolMaxLevel) {
+        if (config.poolMinLevel > config.poolMaxLevel) {
             logger.warn("Pool min level can not be bigger than max level, adjusting range to 1-CobbleMaxLevel...");
             config.poolMinLevel = 1;
             config.poolMaxLevel = Cobblemon.config.getMaxPokemonLevel();
@@ -156,7 +182,7 @@ public class WonderTrade {
             pool = new Pool();
         }
 
-        savePool();
+        //savePool();
     }
 
     private static void saveConfig() {
